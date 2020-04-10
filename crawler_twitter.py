@@ -44,34 +44,38 @@ class Database():
 
         for i in range(len(kw)):
 
-            if kw.loc[i]['palavras-chave'] in status.text:
+            if kw.loc[i]['palavras-chave'] in status.text.lower():
 
                 print(kw.loc[i]['palavras-chave'])
                 cont = 1
         
         if cont == 1:
 
-            colunas = ['id_str', 'created', 'text', 'fav', 'name', 'description', 'loc', 'user_created', 'followers']
-            df = pd.DataFrame(columns = colunas) 
-            
-            ultima_posicao = len(df) + 1
-            df.loc[ultima_posicao, 'id_str'] = status.id_str
-            df.loc[ultima_posicao, 'created'] = status.created_at
-            df.loc[ultima_posicao, 'text'] = status.text
-            df.loc[ultima_posicao, 'fav'] = status.favorite_count
-            df.loc[ultima_posicao, 'name'] = status.user.screen_name
-            df.loc[ultima_posicao, 'description'] = status.user.description
-            df.loc[ultima_posicao, 'loc'] = status.user.location
-            df.loc[ultima_posicao, 'user_created'] = status.user.created_at
-            df.loc[ultima_posicao, 'followers'] = status.user.followers_count
+            if status.coordinates:
+                
+                longitude = status.coordinates['coordinates'][0]
+                latitude = status.coordinates['coordinates'][1]
+                
+                colunas = ['id_str','created','text','usuario','loc','latitude','longitude']
+                df = pd.DataFrame(columns = colunas) 
+                
+                print(status)
+                
+                ultima_posicao = len(df) + 1
+                df.loc[ultima_posicao, 'id_str'] = status.id_str
+                df.loc[ultima_posicao, 'created'] = status.created_at
+                df.loc[ultima_posicao, 'text'] = status.text
+                df.loc[ultima_posicao, 'usuario'] = status.user.screen_name
+                df.loc[ultima_posicao, 'loc'] = status.user.location
+                df.loc[ultima_posicao, 'longitude'] = longitude
+                df.loc[ultima_posicao, 'latitude'] = latitude
+                
+                print(df)
 
-            print(df)
+                self.con_mongo.insert_collection_pandas(self.db,'messages', [df])
 
-            self.con_mongo.insert_collection_pandas(self.db,'messages', [df])
-
-            print('ok')
-
-        print('-------------------------------------------------------------')
+                print('-------------------------------------------------------------')
+        print('...')
 
 class StdOutListener(StreamListener):
     """ A listener handles tweets that are received from the stream.
