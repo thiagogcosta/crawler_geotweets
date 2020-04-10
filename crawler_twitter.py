@@ -51,30 +51,32 @@ class Database():
         
         if cont == 1:
 
-            if status.coordinates:
+            #if status.coordinates:
                 
-                longitude = status.coordinates['coordinates'][0]
-                latitude = status.coordinates['coordinates'][1]
-                
-                colunas = ['id_str','created','text','usuario','loc','latitude','longitude']
-                df = pd.DataFrame(columns = colunas) 
-                
-                print(status)
-                
-                ultima_posicao = len(df) + 1
-                df.loc[ultima_posicao, 'id_str'] = status.id_str
-                df.loc[ultima_posicao, 'created'] = status.created_at
-                df.loc[ultima_posicao, 'text'] = status.text
-                df.loc[ultima_posicao, 'usuario'] = status.user.screen_name
-                df.loc[ultima_posicao, 'loc'] = status.user.location
-                df.loc[ultima_posicao, 'longitude'] = longitude
-                df.loc[ultima_posicao, 'latitude'] = latitude
-                
-                print(df)
+            #longitude = status.coordinates['coordinates'][0]
+            #latitude = status.coordinates['coordinates'][1]
+            
+            #colunas = ['id_str','created','text','usuario','loc','latitude','longitude']
+            colunas = ['id_str','created','text','usuario','loc']
+            
+            df = pd.DataFrame(columns = colunas) 
+            
+            print(status)
+            
+            ultima_posicao = len(df) + 1
+            df.loc[ultima_posicao, 'id_str'] = status.id_str
+            df.loc[ultima_posicao, 'created'] = status.created_at
+            df.loc[ultima_posicao, 'text'] = status.text
+            df.loc[ultima_posicao, 'usuario'] = status.user.screen_name
+            df.loc[ultima_posicao, 'loc'] = status.user.location
+            #df.loc[ultima_posicao, 'longitude'] = longitude
+            #df.loc[ultima_posicao, 'latitude'] = latitude
+            
+            print(df)
 
-                self.con_mongo.insert_collection_pandas(self.db,'messages', [df])
+            self.con_mongo.insert_collection_pandas(self.db,'messages', [df])
 
-                print('-------------------------------------------------------------')
+            print('-------------------------------------------------------------')
         print('...')
 
 class StdOutListener(StreamListener):
