@@ -18,7 +18,7 @@ class Connection_Mongo:
         
         mydb = self.conexao[name]
         
-        print('Base de Dados carregada!')
+        #print('Base de Dados carregada!')
         
         return mydb
     
@@ -62,7 +62,6 @@ class Connection_Mongo:
             if remove_id:
                 del df['_id']
 
-            
             print('Coleção criada!')
             
         except ValueError as e:
@@ -161,10 +160,23 @@ class Connection_Mongo:
             print('Erro:', e)
             
         return(1)
+    
+    #********COUNT Collection********
+    def count_collection(self, mydb, name_collection):
+        
+        try:
+            mycol = mydb[name_collection]
+            
+            tamanho = mycol.estimated_document_count()
+                
+        except ValueError as e:
+            print('Erro:', e)
+            
+        return(tamanho)
         
 # =============================================================================
-#x = Connection_Mongo('localhost', '27017')
-#y = x.create_db('enoesocial')
+x = Connection_Mongo('localhost', '27017')
+y = x.create_db('crawler_insideSP_tweets')
 
 
 #inmet = pd.read_csv('2016_11-2017_03-INMET-NEBUL-PRESS.csv', names = ['Estacao','Data','Hora','PressaoAtmEstacao','Nebulosidade'], sep=';')
@@ -198,10 +210,15 @@ class Connection_Mongo:
 # vec_name = ['municipio','codEstacao','uf','nomeEstacao','latitude','longitude','datahora','valorMedida']
 # vec_data = ['São Paulo','355030801A','SP','Jardim Paulistano','-46,751','-23,582','2016-11-01 00:00:00.0','0']
 # 
-# #Connection_Mongo.insert_one_collection(y, 'inmet', vec_name, vec_data)
-# 
 # Connection_Mongo.drop_one_collection(y, 'inmet', '5d5ebbee06aa53383c331fe0')
 # 
 # #print(y.list_collections)
 # =============================================================================
+#------------Quantidade de Tweets------------
+print(x.count_collection(y, 'tweets'))
+
+#------------Obeter Tweets------------
+df = x.get_collection(y,'tweets',{},1)
+
+df.to_csv('tweets_insideSP.csv')
 

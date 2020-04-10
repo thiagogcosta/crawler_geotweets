@@ -8,76 +8,61 @@ import time
 from sqlalchemy.exc import ProgrammingError
 from con_mongodb import Connection_Mongo
 import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point
 
 class Database():
     
     
-    def __init__(self, local_host, porta, collection):
+    def __init__(self, local_host, porta, collection, local):
         self.con_mongo = Connection_Mongo(local_host, porta)
         self.db = self.con_mongo.create_db(collection)
-
+        self.local = local
+    
+    def In_shape(self, df, shapes):
+        
+        in_shape = 0
+        
+        for sh in shapes.geometry:
+            if(df.within(sh)):
+                in_shape = 1
+        return in_shape
+        
     def setData(self, status):
         
-        #--------------------------------KEY-WORDS---------------------------------------
-
-        colunas = ['palavras-chave']
-
-        kw = pd.DataFrame(columns = colunas)
-
-        palavras_fenomenos = ["alagamento","alagado","alagada","alagando","alagou","alagar",
-                            "chove","chova","chovia","chuva","chuvarada","chuvosa","chuvoso","chuvona","chuvinha","chuvisco","chuvendo",
-                            "diluvio", "dilúvio", "enchente", "enxurrada",
-                            "garoa","inundação","inundacao","inundada","inundado","inundar","inundam","inundou",
-                            "temporal","temporais",
-                            "tromba d'água"]
-
-        for i in palavras_fenomenos:
-            
-            index = len(kw)
-            
-            kw.loc[index, 'palavras-chave'] = i
-
-        #print(kw)
-        #------------------------------------------------------------------------------
         
-        cont = 0
+        if status.coordinates:
+            
+            #--------------------------------------------------------------------------------------
+            longitude = status.coordinates['coordinates'][0]
+            latitude = status.coordinates['coordinates'][1]
+            
+            shape = gpd.read_file(r''+self.local+'Sao_Paulo_city_WGS84.shp')
 
-        for i in range(len(kw)):
-
-            if kw.loc[i]['palavras-chave'] in status.text.lower():
-
-                print(kw.loc[i]['palavras-chave'])
-                cont = 1
-        
-        if cont == 1:
-
-            #if status.coordinates:
+            tweet = Point(longitude,latitude)
+            
+            if(self.In_shape(tweet, shape)):
                 
-            #longitude = status.coordinates['coordinates'][0]
-            #latitude = status.coordinates['coordinates'][1]
+                colunas = ['id_str','created','text','usuario','loc','latitude','longitude']
             
-            #colunas = ['id_str','created','text','usuario','loc','latitude','longitude']
-            colunas = ['id_str','created','text','usuario','loc']
-            
-            df = pd.DataFrame(columns = colunas) 
-            
-            print(status)
-            
-            ultima_posicao = len(df) + 1
-            df.loc[ultima_posicao, 'id_str'] = status.id_str
-            df.loc[ultima_posicao, 'created'] = status.created_at
-            df.loc[ultima_posicao, 'text'] = status.text
-            df.loc[ultima_posicao, 'usuario'] = status.user.screen_name
-            df.loc[ultima_posicao, 'loc'] = status.user.location
-            #df.loc[ultima_posicao, 'longitude'] = longitude
-            #df.loc[ultima_posicao, 'latitude'] = latitude
-            
-            print(df)
+                df = pd.DataFrame(columns = colunas) 
+                
+                #print(status)
+                
+                ultima_posicao = len(df) + 1
+                df.loc[ultima_posicao, 'id_str'] = status.id_str
+                df.loc[ultima_posicao, 'created'] = status.created_at
+                df.loc[ultima_posicao, 'text'] = status.text
+                df.loc[ultima_posicao, 'usuario'] = status.user.screen_name
+                df.loc[ultima_posicao, 'loc'] = status.user.location
+                df.loc[ultima_posicao, 'longitude'] = longitude
+                df.loc[ultima_posicao, 'latitude'] = latitude
+                
+                print(df)
 
-            self.con_mongo.insert_collection_pandas(self.db,'messages', [df])
+                self.con_mongo.insert_collection_pandas(self.db,'tweets',[df])
 
-            print('-------------------------------------------------------------')
-        print('...')
+                print('-------------------------------------------------------------')
 
 class StdOutListener(StreamListener):
     """ A listener handles tweets that are received from the stream.
@@ -86,11 +71,10 @@ class StdOutListener(StreamListener):
 
     def on_status(self, status):
         #print(status.text)
-        if status.retweeted:
-            return
-
+        
         try:
-            aux_db = Database('localhost', '27017', 'crawler_twitter')
+            local = '/home/thiago-costa/master_researcher/NewResearchCERTO/crawler_tweets/'
+            aux_db = Database('localhost', '27017', 'crawler_insideSP_tweets',local)
             aux_db.setData(status)
 
         except ProgrammingError as err:
